@@ -1,0 +1,43 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  margin-top: 10px;
+  background-color: #222;
+  color: #333;
+}
+
+.container {
+  display: inline-block;
+  background: #eee;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  color: #48e;
+  font-size: 36px;
+  text-shadow: 0 0 10px #48e8;
+}
+
+p {
+  font-size: 2em;
+  margin: 20px 0;
+}
+
+#chart-container {
+  width: 80%;
+  height: 400px;
+  margin: auto;
+}
+
+.container__simbolos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid #666d;
+  margin-top: 5px;
+  border-radius: 20px;
+  box-shadow: 0 0 12px 0 #555e;
+  background-color: #48e2;
+}

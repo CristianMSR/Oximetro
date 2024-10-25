@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pulsioxímetro</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                text-align: center;
+                margin-top: 10px;
+                background-color: #222;
+                color: #333;
+            }
+
+            .container {
+                display: flex;
+                background: #eee;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+
+            h1 {
+                padding: 30px 0;
+                margin: 0;
+                display: block;
+                background-color: #eee;
+                color: #48e;
+                font-size: 36px;
+                text-shadow: 0 0 10px #48e4;
+                text-align: center;
+            }
+
+            p {
+                font-size: 2em;
+                margin: 20px 0;
+            }
+
+            #chart-container {
+                display: block;
+                width: 70%;
+                height: 500px;
+                margin: auto;
+            }
+
+            .container__simbolos {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                border: 1px solid #666d;
+                margin-top: 5px;
+                margin-left: 10px;
+                margin-right: 10px;
+                border-radius: 20px;
+                box-shadow: 0 0 12px 0 #555e;
+                background-color: #48e2;
+                flex-grow: 1;
+                flex-basis: 200px;
+            }
+        </style>
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+        <!-- Incluir la librería Chart.js desde CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+        <h1>PULSIOXÍMETRO</h1>
+        <div class="container">
+            <div class="container__simbolos">
+                <span class="material-symbols-outlined"> cardiology </span>
+                <p>PPM: <span id="ppm_value">{{ ppm_value }}</span></p>
+            </div>
+            <div class="container__simbolos">
+                <span class="material-symbols-outlined"> spo2 </span>
+                <p>SpO2: <span id="o2_value">{{ o2_value }}</span></p>
+            </div>
+
+            <div id="chart-container">
+                <canvas id="analogChart"></canvas>
+            </div>
+        </div>
+
+        <script>
+            const ctx = document.getElementById("analogChart").getContext("2d");
+            const analogChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: [], // Las etiquetas del eje x (tiempo)
+                    datasets: [
+                        {
+                            label: "Señal pletismográfica",
+                            data: [], // Los datos de la señal
+                            borderColor: "#007BFF", // Color de la línea
+                            backgroundColor: "rgba(0, 123, 255, 0.1)", // Color de relleno bajo la línea
+                            fill: true, // Relleno bajo la línea
+                            pointRadius: 0, // Eliminar los puntos
+                            pointHoverRadius: 0, // Eliminar los puntos al pasar el ratón
+                            tension: 0.3, // Suaviza la línea entre los puntos
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: "Tiempo",
+                            },
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: "Amplitud",
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 4.095, // Rango típico del ADC de ESP32
+                        },
+                    },
+                },
+            });
+
+            // Función para actualizar la gráfica con nuevos datos
+            let dataIndex = 0; // Variable para contar los datos
+
+            function updateChart(value) {
+                if (analogChart.data.labels.length >= 120) {
+                    // Muestra los últimos 120 datos
+                    analogChart.data.labels.shift(); // Elimina el dato más antiguo
+                    analogChart.data.datasets[0].data.shift();
+                }
+
+                analogChart.data.labels.push("");
+                analogChart.data.datasets[0].data.push(value);
+                analogChart.update();
+            }
+
+            // Actualiza la página cada segundo
+            setInterval(() => {
+                fetch("/data.json")
+                    .then((response) => response.json())
+                    .then((data) => {
+                        // Actualiza la gráfica con el valor
+                        updateChart(Number(data.analog_value));
+
+                        // Actualiza otros valores
+                        document.getElementById("ppm_value").textContent =
+                            data.ppm_value;
+                        document.getElementById("o2_value").textContent =
+                            data.o2_value;
+                    });
+            }, 100); //actualiza cada ciertos ms
+        </script>
+    </body>
+</html>
