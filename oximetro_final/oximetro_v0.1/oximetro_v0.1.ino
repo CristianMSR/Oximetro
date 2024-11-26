@@ -23,7 +23,22 @@ void setup() {
 }
 
 void loop() {
-    // Verificar si hay nuevas credenciales por serial
+    checkCredentials();
+
+    // Aquí puedes leer y enviar los datos de los sensores
+    int analogValue = 500; // Simulando valor
+    int ppmValue = 63;     // Simulando valor PPM
+    int o2Value = 98;      // Simulando valor
+
+    httpClient.sendData(analogValue, ppmValue, o2Value);
+
+    delay(1000); // Espera 1 segundo entre envíos
+}
+
+
+
+void checkCredentials(){
+  // Verificar si hay nuevas credenciales por serial
     wifiCreds.checkForNewCredentials();
     
     // Actualizar las credenciales en el cliente HTTP si han cambiado
@@ -42,16 +57,8 @@ void loop() {
         previousSSID = wifiCreds.getSSID();
         previousPassword = wifiCreds.getPassword();
     }
-
-    // Aquí puedes leer y enviar los datos de los sensores
-    int analogValue = 500; // Simulando valor
-    int ppmValue = 63;     // Simulando valor PPM
-    int o2Value = 98;      // Simulando valor
-
-    httpClient.sendData(analogValue, ppmValue, o2Value);
-
-    delay(1000); // Espera 1 segundo entre envíos
 }
+
 
 // Función para conectar a WiFi con un timeout
 void connectToWiFiWithTimeout(int timeout) {
@@ -69,6 +76,5 @@ void connectToWiFiWithTimeout(int timeout) {
         digitalWrite(WifiConectado, HIGH);
     } else {
         Serial.println("No se pudo conectar a WiFi. Esperando credenciales...");
-        // Aquí podrías agregar lógica para manejar la espera de credenciales
     }
 }
