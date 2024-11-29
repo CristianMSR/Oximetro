@@ -127,12 +127,9 @@
                 },
             });
 
-            // Función para actualizar la gráfica con nuevos datos
-            let dataIndex = 0; // Variable para contar los datos
-
             function updateChart(value) {
-                if (analogChart.data.labels.length >= 120) {
-                    // Muestra los últimos 120 datos
+                if (analogChart.data.labels.length >= 900) {
+                    // Muestra los últimos 900 datos
                     analogChart.data.labels.shift(); // Elimina el dato más antiguo
                     analogChart.data.datasets[0].data.shift();
                 }
@@ -143,20 +140,31 @@
             }
 
             // Actualiza la página cada segundo
-            setInterval(() => {
-                fetch("/data.json")
-                    .then((response) => response.json())
-                    .then((data) => {
-                        // Actualiza la gráfica con el valor
-                        updateChart(Number(data.analog_value));
+            let analogData = []; // Almacena los datos recibidos
+            let dataIndex = 0; // Índice para recorrer los datos recibidos
 
-                        // Actualiza otros valores
-                        document.getElementById("ppm_value").textContent =
-                            data.ppm_value;
-                        document.getElementById("o2_value").textContent =
-                            data.o2_value;
-                    });
-            }, 1000); //actualiza cada ciertos ms
+            setInterval(() => {
+                if (dataIndex < analogData.length) {
+                    // Actualiza el gráfico con el siguiente valor del arreglo
+                    updateChart(analogData[dataIndex]);
+                    dataIndex++;
+                } else {
+                    // Si no hay más datos, obtén nuevos datos del servidor
+                    fetch("/data.json")
+                        .then((response) => response.json())
+                        .then((data) => {
+                            // Carga los datos recibidos al arreglo `analogData`
+                            analogData = data.analog_values;
+                            dataIndex = 0; // Reinicia el índice para el nuevo conjunto de datos
+
+                            // Actualiza los otros valores
+                            document.getElementById("ppm_value").textContent =
+                                data.ppm_value;
+                            document.getElementById("o2_value").textContent =
+                                data.o2_value;
+                        });
+                }
+            }, 1000); // Actualiza cada 1s
         </script>
     </body>
 </html>

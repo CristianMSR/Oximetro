@@ -16,6 +16,8 @@
             .container {
                 display: flex;
                 background: #eee;
+                /* padding: 20px; */
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
                 flex-direction: row;
                 flex-wrap: wrap;
                 gap: 20px;
@@ -71,6 +73,9 @@
         <h1>PULSIOXÍMETRO</h1>
         <div class="container">
             <div class="container__simbolos">
+                <p>value: <span id="analog_value">{{ analog_value }}</span></p>
+            </div>
+            <div class="container__simbolos">
                 <span class="material-symbols-outlined"> cardiology </span>
                 <p>PPM: <span id="ppm_value">{{ ppm_value }}</span></p>
             </div>
@@ -94,12 +99,9 @@
                         {
                             label: "Señal pletismográfica",
                             data: [], // Los datos de la señal
-                            borderColor: "#007BFF", // Color de la línea
-                            backgroundColor: "rgba(0, 123, 255, 0.1)", // Color de relleno bajo la línea
-                            fill: true, // Relleno bajo la línea
-                            pointRadius: 0, // Eliminar los puntos
-                            pointHoverRadius: 0, // Eliminar los puntos al pasar el ratón
-                            tension: 0.3, // Suaviza la línea entre los puntos
+                            borderColor: "#007BFF",
+                            backgroundColor: "rgba(0, 123, 255, 0.1)",
+                            fill: true,
                         },
                     ],
                 },
@@ -121,7 +123,7 @@
                                 text: "Amplitud",
                             },
                             suggestedMin: 0,
-                            suggestedMax: 4.095, // Rango típico del ADC de ESP32
+                            suggestedMax: 4095, // Rango típico del ADC de ESP32
                         },
                     },
                 },
@@ -147,16 +149,18 @@
                 fetch("/data.json")
                     .then((response) => response.json())
                     .then((data) => {
-                        // Actualiza la gráfica con el valor
-                        updateChart(Number(data.analog_value));
-
-                        // Actualiza otros valores
+                        // Actualiza los valores mostrados
+                        document.getElementById("analog_value").textContent =
+                            data.analog_value;
                         document.getElementById("ppm_value").textContent =
                             data.ppm_value;
                         document.getElementById("o2_value").textContent =
                             data.o2_value;
+
+                        // Actualiza la gráfica
+                        updateChart(Number(data.analog_value));
                     });
-            }, 1000); //actualiza cada ciertos ms
+            }, 100); //actualiza cada ciertos ms
         </script>
     </body>
 </html>

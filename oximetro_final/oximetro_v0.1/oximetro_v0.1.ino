@@ -1,63 +1,92 @@
 #include "WiFiCredentials.h"
 #include "ESP32HttpClient.h"
+#include "PulseOximeter.h"
 
 #define WifiConectado 2
 
 WiFiCredentials wifiCreds;
 ESP32HttpClient httpClient("", "", "http://192.168.100.52:5000/data");
+PulseOximeter oximeter(19, 18, 1.8, 2.0, 10);
+int BPM;
+int SPO2;
 
 void setup() {
     Serial.begin(115200);
     pinMode(WifiConectado, OUTPUT);
+
     wifiCreds.begin();
 
-    // Si hay credenciales almacenadas, leerlas
+    // Verificar si hay credenciales válidas en EEPROM
     if (EEPROM.read(0) != 0xFF) {
         wifiCreds.readCredentialsFromEEPROM();
+        Serial.println("Credenciales encontradas en EEPROM:");
+        Serial.printf("SSID: %s\n", wifiCreds.getSSID());
+        Serial.printf("Password: %s\n", wifiCreds.getPassword());
     } else {
-        Serial.println("No se encontraron credenciales guardadas.");
+        Serial.println("No se encontraron credenciales. Esperando nuevas credenciales...");
+        while (WiFi.status() != WL_CONNECTED) {
+            checkCredentials();  // Esperar credenciales por serial
+            delay(1000);
+        }
     }
 
-    // Intentar conectar a WiFi
-    connectToWiFiWithTimeout(6); // Timeout de 6 segundos
+    oximeter.begin();
 }
+
+
+
 
 void loop() {
     checkCredentials();
+    
+    oximeter.medir();
+    oximeter.medir();
 
-    // Aquí puedes leer y enviar los datos de los sensores
-    int analogValue = 500; // Simulando valor
-    int ppmValue = 63;     // Simulando valor PPM
-    int o2Value = 98;      // Simulando valor
+    SPO2 = oximeter.getSPO2();
+    BPM = oximeter.getBPM();
 
-    httpClient.sendData(analogValue, ppmValue, o2Value);
+    Serial.print("SPO2: ");
+    Serial.println(SPO2);
+    Serial.print("BPM: ");
+    Serial.println(BPM);
+    
+    connectToWiFiWithTimeout(10);
+    delay(10);
 
-    delay(1000); // Espera 1 segundo entre envíos
+    httpClient.sendData(0, BPM, SPO2);
+
+    delay(100);
+
+    WiFi.disconnect();
+    digitalWrite(WifiConectado, LOW);
 }
 
 
 
-void checkCredentials(){
-  // Verificar si hay nuevas credenciales por serial
+
+
+void checkCredentials() {
     wifiCreds.checkForNewCredentials();
-    
-    // Actualizar las credenciales en el cliente HTTP si han cambiado
+
     static String previousSSID = wifiCreds.getSSID();
     static String previousPassword = wifiCreds.getPassword();
 
     if (strcmp(previousSSID.c_str(), wifiCreds.getSSID()) != 0 ||
         strcmp(previousPassword.c_str(), wifiCreds.getPassword()) != 0) {
-        Serial.println("Credenciales WiFi cambiadas. Re-conectando...");
-        
-        // Actualizar las credenciales del cliente HTTP
-        httpClient = ESP32HttpClient(wifiCreds.getSSID(), wifiCreds.getPassword(), "http://192.168.100.52:5000/data");
-        connectToWiFiWithTimeout(6);  // Timeout de 6 segundos para reconectar
-        
-        // Actualizar las credenciales anteriores
+        Serial.println("Credenciales WiFi actualizadas. Guardando en EEPROM...");
+        wifiCreds.saveCredentialsToEEPROM();
+
+        // Guardar marcador de datos válidos
+        EEPROM.write(0, 0xAA);
+        EEPROM.commit();
+
+        connectToWiFiWithTimeout(10);
+
         previousSSID = wifiCreds.getSSID();
         previousPassword = wifiCreds.getPassword();
     }
 }
+
 
 
 // Función para conectar a WiFi con un timeout
@@ -67,14 +96,17 @@ void connectToWiFiWithTimeout(int timeout) {
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < timeout) {
         delay(1000);
-        Serial.print("Conectando a WiFi...");
+        Serial.printf("Intentando conectar a WiFi (Intento %d)...\n", attempts + 1);
         attempts++;
     }
 
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Conectado a WiFi");
+        Serial.println("Conectado a WiFi.");
         digitalWrite(WifiConectado, HIGH);
     } else {
-        Serial.println("No se pudo conectar a WiFi. Esperando credenciales...");
+        Serial.println("No se pudo conectar a WiFi. Credenciales actuales:");
+        Serial.printf("SSID: %s\n", wifiCreds.getSSID());
+        Serial.printf("Password: %s\n", wifiCreds.getPassword());
     }
 }
+

@@ -4,7 +4,6 @@ from PIL import ImageTk, Image
 import serial
 import os
 import sys
-import pygame  # Importa pygame para la reproducción de sonido
 
 # Configuración del puerto serie
 SERIAL_PORT = 'COM3'  # Cambia este puerto según el tuyo
@@ -43,7 +42,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # Cargar la imagen de fondo
-image_path = resource_path("fondo.png")
+image_path = resource_path("fondo.jpg")
 bg_image = Image.open(image_path)
 bg_photo = ImageTk.PhotoImage(bg_image)
 
@@ -82,12 +81,6 @@ root.resizable(False, False)
 
 # Vincular la tecla Enter para enviar los datos
 root.bind('<Return>', send_to_esp32)  # Vincula la tecla Enter a la función send_to_esp32
-
-# Inicializar pygame para reproducir sonido
-pygame.mixer.init()
-sound_path = resource_path("sonido.mp3")  # Cambia el nombre del archivo según el sonido que quieras usar
-pygame.mixer.music.load(sound_path)
-pygame.mixer.music.play()
 
 # Iniciar el bucle principal de la interfaz gráfica
 root.mainloop()
